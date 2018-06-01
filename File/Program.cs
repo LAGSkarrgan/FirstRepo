@@ -12,40 +12,67 @@ namespace ConsoleApplication1
     {
         static Object locker = new object();
         static List<string> result = new List<string>();
+        static string fileName = "threadFile.txt";
+        static string filePath;
+
         static void Main(string[] args)
         {
-            DirectoryInfo curr = new DirectoryInfo(".");
-            string filePath = curr.FullName + @"\res.txt";
-            int count = 40;
+            int threadCount = 20;
+            Directory.CreateDirectory(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "ThreadWrite"
+            ));
+            filePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "ThreadWrite",
+                fileName
+            );
 
-            Thread[] ths = new Thread[count];
-            for (int i = 0; i < count; i++)
-            {
-                Thread t = new Thread(new ThreadStart(CallThreadFuncion))
-                {
-                    Name = "th" + i
-                };
-                ths[i] = t;
-                t.Start();
-            }
-
-            for (int i = 0; i < count; i++)
-            {
-                ths[i].Join();
-            }
-
-            File.WriteAllLines(filePath, result.ToArray());
-            Console.WriteLine(filePath);
+            Console.WriteLine($"Writing to file {filePath}.");
+            Console.WriteLine("Press any key to start writing.");
             Console.ReadKey();
+
+            Thread[] threads = new Thread[threadCount];
+            for (int i = 0; i < threadCount; i++)
+            {
+                StartNewThread(threads, i);
+            }
+            
+            while(true)
+            {
+                for (int i = 0; i < threadCount; i++)
+                {
+                    if (threads[i].ThreadState != ThreadState.Running)
+                        StartNewThread(threads, i);
+                }
+            }
         }
-        static void CallThreadFuncion()
+        static void StartNewThread(Thread[] threads, int i)
+        {
+            Thread thread = new Thread(new ThreadStart(ThreadWrite))
+            {
+                Name = "thread" + i
+            };
+            threads[i] = thread;
+            thread.Start();
+        }
+        static void ThreadWrite()
         {
             lock (locker)
             {
-                result.Add(string.Concat(Thread.CurrentThread.Name, ", ", new Random().NextDouble()));
-                Thread.Sleep(15);
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter(new FileStream(filePath, FileMode.Append)))
+                    {
+                        writer.WriteLine($"Zapisuje vlánko {Thread.CurrentThread.Name}.");
+                        Console.WriteLine("Done.");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("TODO zalogovat exception.");
+                }
             }
-            Console.WriteLine("Thread finished." + Thread.CurrentThread.Name);
         }
     }
 }

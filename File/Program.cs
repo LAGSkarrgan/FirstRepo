@@ -10,6 +10,7 @@ namespace ConsoleApplication1
 {
     class Program
     {
+        static Object locker = new object();
         static List<string> result = new List<string>();
         static void Main(string[] args)
         {
@@ -20,8 +21,10 @@ namespace ConsoleApplication1
             Thread[] ths = new Thread[count];
             for (int i = 0; i < count; i++)
             {
-                Thread t = new Thread(new ThreadStart(ThreadWrite));
-                t.Name = "th" + i;
+                Thread t = new Thread(new ThreadStart(CallThreadFuncion))
+                {
+                    Name = "th" + i
+                };
                 ths[i] = t;
                 t.Start();
             }
@@ -31,14 +34,13 @@ namespace ConsoleApplication1
                 ths[i].Join();
             }
 
-            File.WriteAllLines(filePath, result);
+            File.WriteAllLines(filePath, result.ToArray());
             Console.WriteLine(filePath);
             Console.ReadKey();
         }
-
-        public static void ThreadWrite()
+        static void CallThreadFuncion()
         {
-            lock (result)
+            lock (locker)
             {
                 result.Add(string.Concat(Thread.CurrentThread.Name, ", ", new Random().NextDouble()));
                 Thread.Sleep(15);

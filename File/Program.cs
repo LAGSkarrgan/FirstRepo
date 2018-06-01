@@ -41,6 +41,7 @@ namespace ConsoleApplication1
             lock (result)
             {
                 result.Add(string.Concat(Thread.CurrentThread.Name, ", ", new Random().NextDouble()));
+                Thread.Sleep(15);
             }
             Console.WriteLine("Thread finished." + Thread.CurrentThread.Name);
         }

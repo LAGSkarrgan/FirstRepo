@@ -17,7 +17,7 @@ namespace ConsoleApplication1
 
         static void Main(string[] args)
         {
-            int threadCount = 20;
+            int threadCount = 5;
             Directory.CreateDirectory(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 "ThreadWrite"
@@ -35,44 +35,40 @@ namespace ConsoleApplication1
             Thread[] threads = new Thread[threadCount];
             for (int i = 0; i < threadCount; i++)
             {
-                StartNewThread(threads, i);
-            }
-            
-            while(true)
-            {
-                for (int i = 0; i < threadCount; i++)
+                Thread thread = new Thread(new ThreadStart(ThreadWrite))
                 {
-                    if (threads[i].ThreadState != ThreadState.Running)
-                        StartNewThread(threads, i);
-                }
+                    Name = "thread" + i
+                };
+                threads[i] = thread;
+                thread.Start();
             }
-        }
-        static void StartNewThread(Thread[] threads, int i)
-        {
-            Thread thread = new Thread(new ThreadStart(ThreadWrite))
-            {
-                Name = "thread" + i
-            };
-            threads[i] = thread;
-            thread.Start();
+
+            Console.ReadLine();
         }
         static void ThreadWrite()
         {
-            lock (locker)
+            while (true)
             {
-                try
+                int sleepTime = new Random().Next(1000);
+                lock (locker)
                 {
-                    using (StreamWriter writer = new StreamWriter(new FileStream(filePath, FileMode.Append)))
+                    try
                     {
-                        writer.WriteLine($"Zapisuje vlánko {Thread.CurrentThread.Name}.");
-                        Console.WriteLine("Done.");
+                        using (StreamWriter writer = new StreamWriter(new FileStream(filePath, FileMode.Append)))
+                        {
+                            writer.WriteLine($"Zapisuje vlánko {Thread.CurrentThread.Name}, uspáno na {sleepTime} ms.");
+                            Console.WriteLine("Done.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("TODO zalogovat exception.");
                     }
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine("TODO zalogovat exception.");
-                }
+                Console.WriteLine("uspáno na " + sleepTime);
+                Thread.Sleep(sleepTime);
             }
+            
         }
     }
 }
